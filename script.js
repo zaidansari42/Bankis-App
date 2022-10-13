@@ -60,3 +60,133 @@ const inputTransferAmount = document.querySelector('.form__input--amount');
 const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Creating a func for the creation of all the usernames
+const createUserName = function (accs) {
+  accs.forEach(function (acc) {
+    acc.username = acc.owner
+      .toLowerCase()
+      .split(' ')
+      .map((name) => name.slice(0, 1))
+      .join('');
+  });
+};
+
+// Calling the username function
+createUserName(accounts);
+
+// Creating a balance update and welcome label
+const balanceUpdate = function (acc) {
+  acc.balance = acc.movements.reduce((acc, cur) => acc + cur);
+
+  labelBalance.textContent = `${acc.balance}€`;
+
+  labelWelcome.textContent = `Welcome back, ${acc.owner.split(' ')[0]}`;
+};
+
+// Transaction Update
+const transaction = function (acc) {
+  containerMovements.innerHTML = '';
+  acc.movements.forEach(function (mov, i) {
+    const transactionType = mov < 0 ? 'withdrawal' : 'deposit';
+
+    let html = `<div class="movements__row">
+    <div class="movements__type movements__type--${transactionType}">${
+      i + 1
+    } ${transactionType}</div>
+    <div class="movements__date">${i + 1} days ago</div>
+    <div class="movements__value">${Math.abs(mov)}€</div>
+</div>`;
+
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+  });
+};
+
+// Account summary Update
+const summary = function (acc) {
+  const depositsOnly = acc.movements
+    .filter((mov) => mov > 0)
+    .reduce((acc, cur) => acc + cur, 0);
+
+  const withdrawalsOnly = acc.movements
+    .filter((mov) => mov < 0)
+    .reduce((acc, cur) => acc + Math.abs(cur), 0);
+
+  const interest = acc.movements
+    .filter((mov) => mov > 100)
+    .map((mov) => mov * acc.interestRate)
+    .reduce((acc, cur) => acc + cur / 100, 0);
+
+  labelSumIn.textContent = `${depositsOnly}€`;
+  labelSumOut.textContent = `${withdrawalsOnly}€`;
+  labelSumInterest.textContent = `${interest}€`;
+};
+
+let currentUser;
+
+const loginUser = function (accs) {
+  currentUser = accs.find((acc) => acc.username === inputLoginUsername.value);
+
+  if (currentUser.pin === Number(inputLoginPin.value)) {
+    // Calling all the functions
+    displayUI(currentUser);
+
+    inputLoginUsername.value = '';
+    inputLoginPin.value = '';
+    inputLoginPin.blur();
+  } else {
+    alert('Sorry, You have either entered a Wrong Username or PIN');
+  }
+};
+
+// creating a display function
+const displayUI = function (acc) {
+  balanceUpdate(acc);
+  transaction(acc);
+  summary(acc);
+  containerApp.style.opacity = 1;
+};
+
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  // finding the user
+  loginUser(accounts);
+});
+
+const transfer = function (acc, recacc, reamnt) {
+  acc.movements.push(-reamnt);
+  recacc.movements.push(reamnt);
+};
+
+// Transfer Feauture
+
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  let receiverAcc = accounts.find(
+    (acc) => acc.username === inputTransferTo.value
+  );
+  const receivingAmount = Number(inputTransferAmount.value);
+
+  if (
+    receiverAcc &&
+    receivingAmount < currentUser.balance &&
+    receiverAcc.username != currentUser.username
+  ) {
+    // Initiating Transfer
+    transfer(currentUser, receiverAcc, receivingAmount);
+
+    // Updating UI
+    displayUI(currentUser);
+
+    inputTransferTo.value = '';
+    inputTransferAmount.value = '';
+  } else {
+    alert('Account not found');
+    inputTransferTo.value = '';
+    inputTransferAmount.value = '';
+  }
+});
