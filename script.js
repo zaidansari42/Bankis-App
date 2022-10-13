@@ -129,12 +129,11 @@ let currentUser;
 const loginUser = function (accs) {
   currentUser = accs.find((acc) => acc.username === inputLoginUsername.value);
 
-  if (currentUser.pin === Number(inputLoginPin.value)) {
+  if (currentUser?.pin === Number(inputLoginPin.value)) {
     // Calling all the functions
     displayUI(currentUser);
 
-    inputLoginUsername.value = '';
-    inputLoginPin.value = '';
+    inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
   } else {
     alert('Sorry, You have either entered a Wrong Username or PIN');
@@ -189,4 +188,58 @@ btnTransfer.addEventListener('click', function (e) {
     inputTransferTo.value = '';
     inputTransferAmount.value = '';
   }
+});
+
+// Request Loan Feature
+
+// Any of the deposits made should be at least 10 percent of the requested loan amount
+
+// dep >= 0.10 * loan
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const reqAmount = Number(inputLoanAmount.value);
+  if (currentUser.movements.some((mov) => mov >= 0.1 * reqAmount)) {
+    currentUser.movements.push(reqAmount);
+    inputLoanAmount.value = '';
+    displayUI(currentUser);
+  } else {
+    alert('Loan Amount is too big, Please try again with a less amount.');
+  }
+});
+
+// btnClose
+// inputCloseUsername
+// inputClosePin
+
+// Account close Feature
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  if (
+    inputCloseUsername.value === currentUser.username &&
+    Number(inputClosePin.value) === currentUser.pin
+  ) {
+    let index = accounts.findIndex(
+      (acc) => acc.username === currentUser.username
+    );
+
+    // Removing Acc using splice
+    accounts.splice(index, 1);
+
+    inputCloseUsername.value = inputClosePin.value = '';
+
+    // removing display
+    containerApp.style.opacity = 0;
+
+    labelWelcome.textContent = 'Log in to get started';
+  } else {
+    alert('Incorrect Credentials, please try again later');
+  }
+});
+
+// Sort feature
+
+btnSort.addEventListener('click', function () {
+  const sortedMov = currentUser.movements.sort((a, b) => a - b);
 });
